@@ -18,6 +18,9 @@ namespace cloudeventsformatdemo
         static void Main(string[] args)
         {
             
+            // The initial object is created as a 1.0 object, with five extensions added into a bag in the
+            // in-memory serializer object for JSON.
+
             ICloudEventV10 cloudEvent = new JsonCloudEventV10
             {
                 cloudEventsVersion = "1.0",
@@ -37,12 +40,16 @@ namespace cloudeventsformatdemo
                 }
             };
 
+            // The object is then serialized to JSON, where the
+            // extensions show up as flat object members of the envelope.
             Console.WriteLine("--- JSON 1.0");
             MemoryStream memoryStream = new MemoryStream();
             JsonSerialize(cloudEvent, memoryStream);
             memoryStream.Position = 0;
             DumpTextStream(memoryStream);
 
+            // When the object is deserialized into 1.0, the elements go back into the bag. That's simply 
+            // a function of the chosen serializer, JSON.NET.
             Console.WriteLine("JSON: ----- Deserialize as 1.0 > 1.0");
             memoryStream.Position = 0;
             var jsonCloudEventV10 = JsonDeserialize<JsonCloudEventV10>(memoryStream);
@@ -51,6 +58,9 @@ namespace cloudeventsformatdemo
                 Console.WriteLine($"1.0 extension {extension.Key}: {extension.Value}");
             }
 
+            // When the object is deserialized into 1.1, the `extraThing1` and `extraThing2` properties
+            // and populated from the content, and the remaining extensions go into the bag. Again, that's
+            // a function of the serializer.
             Console.WriteLine("JSON: ----- Deserialize 1.0 > 1.1");
             memoryStream.Position = 0;
             var jsonCloudEventV11 = JsonDeserialize<JsonCloudEventV11>(memoryStream);
@@ -61,6 +71,9 @@ namespace cloudeventsformatdemo
                 Console.WriteLine($"1.1 extension {extension.Key}: {extension.Value}");
             }
 
+            // Because the wire repersentation doesn't make a difference between the extensions in 1.0 and 1.1,
+            // you'll see that serializing the resulting 1.1 in-memory object and reading it back as 1.0 or
+            // 1.1 yields the exact same expected results.
             Console.WriteLine("--- JSON 1.1");
             memoryStream = new MemoryStream();
             JsonSerialize(jsonCloudEventV11, memoryStream);
@@ -85,10 +98,14 @@ namespace cloudeventsformatdemo
                 Console.WriteLine($"1.1 extension {extension.Key}: {extension.Value}");
             }
 
-
-            // copy JSON 1.1 object to XML 1.0 object
+            // The XML CloudEvents 1.0 in-memory object is created as a deep copy from the JSON 1.1 object,
+            // showing that there's nothing precluding extensions to be copied across different objects tailored
+            // to different serializers.
+               
             var xmlCloudEvent = new XmlCloudEventV10(jsonCloudEventV11);
 
+            // The rest of the XML flow is exactly equivalent to JSON. The data on the wire shows up flat and
+            // we're using the serializer's facility to deal with unknown objects to handle extensions.
             Console.WriteLine("--- XML 1.0");
             memoryStream = new MemoryStream();
             XmlSerializeV10(xmlCloudEvent, memoryStream);
@@ -137,6 +154,14 @@ namespace cloudeventsformatdemo
                 Console.WriteLine($"1.1 extension {extension.Name}: {extension.InnerText}");
             }
 
+
+            // The Thrift and Protobuf handling is practically identical. The Thrift and Protobuf serializers are
+            // using an attribute driven model and not the respective IDL compiler, but the
+            // result is wire compatible. 
+
+            // The strategy here is to make an extension bag and for the in memory respresentation and to also use
+            // that bag on the wire, because both require schema.
+
             Console.WriteLine("--- Thrift 1.0");
             var thriftCloudEvent = new ThriftCloudEventV10(xmlCloudEventV11);
             memoryStream = new MemoryStream();
@@ -152,6 +177,7 @@ namespace cloudeventsformatdemo
                 Console.WriteLine($"1.0 extension {extension.Key}: {extension.Value}");
             }
 
+            // Specifically 
             Console.WriteLine("THRIFT: ----- Deserialize 1.0 > 1.1");
             memoryStream.Position = 0;
             var thriftCloudEventV11 = ThriftDeserializeV11(memoryStream);
