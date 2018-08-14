@@ -20,6 +20,8 @@ latter extends the well-known set of fields by two fields, `extraThing1` and `ex
 
 ## JSON
 
+Main file is [Program.cs](Program.cs).
+
 The initial object is created as a 1.0 object, with five extensions added into a bag in the
 in-memory serializer object for JSON. The object is then serialized to JSON, where the 
 extensions show up as flat object members of the envelope. 
@@ -66,16 +68,7 @@ To deal with that, I suggest that we amend the Content-Type in the transport bin
 data attribute) with a cloudEventsVersion parameters (e.g. application/cloudevents+protobuf;cloudEventsVersion=1.1)
 which allows a schema bound serializer to pick the right base schema.
 
-
-
-
-
-
-
- 
-
-
-The main file to pay attention to is `Program.cs`. The 
+Output, so that you don't have to run it yourself:
 
 ```
 
